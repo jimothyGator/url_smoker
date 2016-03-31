@@ -6,7 +6,7 @@ module UrlSmoker
   class Site
     include Enumerable
     extend Forwardable
-    attr_reader :base_url, :test_cases
+    attr_reader :base_url, :test_cases, :name
 
     def_delegators :@test_cases, :each, :<<, :include?, :empty?
 
@@ -54,6 +54,20 @@ module UrlSmoker
         [true, ""]
       else
         [false, "expected: #{@expected}, received #{response.code}"]
+      end
+    end
+  end
+
+  class ContentTypeCondition
+    def initialize(expected)
+      @expected = expected
+    end
+
+    def eval(response) 
+      if @expected == response.content_type
+        [true, ""]
+      else
+        [false, "expected: #{@expected}, received #{response.content_type}"]
       end
     end
   end

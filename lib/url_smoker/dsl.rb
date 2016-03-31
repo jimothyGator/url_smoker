@@ -24,13 +24,21 @@ module UrlSmoker
         def initialize(uri, expected_response_code=nil, &block)
             @test_case = TestCase.new uri
             if expected_response_code
-                condition = ResponseCodeCondition.new expected_response_code
-                @test_case << condition
+                response_code expected_response_code
             end
             if block_given?
                 instance_eval &block
             end
         end
+
+        def content_type(expected)
+            @test_case << ContentTypeCondition.new(expected)
+        end
+
+        def response_code(expected)
+            @test_case << ResponseCodeCondition.new(expected)
+        end
+
     end
 
     def self.site(name, base_url, &block)
