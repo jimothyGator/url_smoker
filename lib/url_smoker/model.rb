@@ -1,5 +1,6 @@
-require 'forwardable'
+require_relative 'colorize'
 
+require 'forwardable'
 require 'net/http'
 
 module UrlSmoker
@@ -38,8 +39,8 @@ module UrlSmoker
       response = Net::HTTP.get_response @uri
       @conditions.each do |condition|
         success, message = condition.eval(response)
-        puts " FAIL: #{@uri}, #{message}" unless success
-        puts " Pass: #{@uri}" if success
+        puts " FAIL:".red + " #{@uri}, #{message}" unless success
+        puts " PASS:".green + " #{@uri}" if success
       end
     end
   end
