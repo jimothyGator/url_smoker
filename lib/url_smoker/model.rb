@@ -1,7 +1,6 @@
 require_relative 'colorize'
 
 require 'forwardable'
-require 'net/http'
 
 module UrlSmoker
   class Site
@@ -28,6 +27,7 @@ module UrlSmoker
   class TestCase
     include Enumerable
     extend Forwardable
+    attr_reader :uri
     def_delegators :@conditions, :each, :<<, :include?, :empty?
 
     def initialize(uri)
@@ -35,41 +35,76 @@ module UrlSmoker
       @conditions = []
     end
 
-    def run
-      response = Net::HTTP.get_response @uri
+    def eval(response)
+      results = []
+
       @conditions.each do |condition|
-        success, message = condition.eval(response)
-        puts " FAIL:".red + " #{@uri}, #{message}" unless success
-        puts " PASS:".green + " #{@uri}" if success
+        success = condition.eval(response)
+        results << [success, condition]
+        break unless success
       end
+
+      results
     end
+
+    def run
+    end
+  end
+
+  module Condition
+    attr_reader :actual, :expected, :success
+
+    def condition_name
+      self.class.name.split("::").last
+    end
+
+    def to_s
+      if success
+        "#{condition_name}: #{expected}"
+      else
+        "#{condition_name}: Expected #{expected}, actual #{actual}"
+      end     
+    end   
   end
 
   class ResponseCodeCondition
+    include Condition
+
     def initialize(expected)
       @expected = expected
     end
 
-    def eval(response) 
-      if @expected.to_s == response.code
-        [true, ""]
-      else
-        [false, "expected: #{@expected}, received #{response.code}"]
-      end
+    def eval(response)
+      @actual = response.code
+      @success = @expected.to_s == response.code
+
+      @success
     end
+
+    def condition_name
+      "Response code"
+    end
+
   end
 
   class ContentTypeCondition
+    include Condition
+
     def initialize(expected)
       @expected = expected
     end
 
     def eval(response) 
-      if @expected == response.content_type
-        [true, ""]
-      else
-        [false, "expected: #{@expected}, received #{response.content_type}"]
-      end
+      @actual = response.content_type
+      @success = @expected == @actual
+
+      @success
     end
+
+
+    def condition_name
+      "Content type"
+    end
+
   end
 end
