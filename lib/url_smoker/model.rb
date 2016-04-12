@@ -15,12 +15,6 @@ module UrlSmoker
       @base_url = base_url
       @test_cases = []
     end
-
-    def run_tests
-      @test_cases.each do |test_case|
-        test_case.run
-      end
-    end
   end
 
 
@@ -45,9 +39,6 @@ module UrlSmoker
       end
 
       results
-    end
-
-    def run
     end
   end
 
