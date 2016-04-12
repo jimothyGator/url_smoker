@@ -1,4 +1,7 @@
 module UrlSmoker
+  CHECKMARK = "\u2713"
+  X_MARK = "\u2718"
+
   def self.run_tests(site)
     puts "Testing #{site.name} (#{site.base_url})"
     site.each do |test_case|
@@ -6,8 +9,8 @@ module UrlSmoker
       results = test_case.eval response
 
       success = results.all? {|success, _| success}
-      puts "FAIL".red + ": #{test_case.uri}" unless success
-      puts "PASS".green + ": #{test_case.uri}" if success
+      puts "  #{X_MARK} #{test_case.uri}".red unless success
+      puts "  #{CHECKMARK} #{test_case.uri}".green if success
 
       if !success
         failed_results = results.select {|success, _| !success }
