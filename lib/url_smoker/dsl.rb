@@ -2,6 +2,8 @@ require_relative 'model'
 
 require 'uri'
 
+@sites = []
+
 module UrlSmoker
     class SiteBuilder
         attr_reader :site
@@ -48,5 +50,16 @@ module UrlSmoker
 end
 
 def site(name, base_url, &block)
-    UrlSmoker::site(name, base_url, &block)
+    site = UrlSmoker::site(name, base_url, &block)
+    @sites.push site
+    site
+end
+
+def smoke
+    url_count = @sites.map {|site| site.test_cases.length }.reduce(:+)
+    puts "Smoking #{@sites.length} sites and #{url_count} URLs"
+    @sites.each do |site|
+        UrlSmoker::run_tests site
+        puts "--------------"
+    end
 end
