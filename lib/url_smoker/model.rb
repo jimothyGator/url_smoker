@@ -1,4 +1,5 @@
 require_relative 'colorize'
+require 'uri'
 
 require 'forwardable'
 
@@ -24,9 +25,13 @@ module UrlSmoker
     attr_reader :uri
     def_delegators :@conditions, :each, :<<, :include?, :empty?
 
-    def initialize(uri)
-      @uri = uri
+    def initialize(site, uri)
+      @site, @uri = site, uri
       @conditions = []
+    end
+
+    def uri
+      URI.join @site.base_url, @uri
     end
 
     def eval(response)
