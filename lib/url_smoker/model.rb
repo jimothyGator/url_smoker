@@ -1,5 +1,6 @@
 require_relative 'colorize'
 require 'uri'
+require 'ostruct'
 
 require 'forwardable'
 
@@ -7,7 +8,7 @@ module UrlSmoker
   class Site
     include Enumerable
     extend Forwardable
-    attr_reader :base_url, :test_cases, :name
+    attr_reader :base_url, :test_cases, :name, :auth
 
     def_delegators :@test_cases, :each, :<<, :include?, :empty?
 
@@ -16,22 +17,49 @@ module UrlSmoker
       @base_url = base_url
       @test_cases = []
     end
+
+    def basic_auth(user, password)
+      @auth = OpenStruct.new({type: :basic, user: user, password: password})
+    end
+
+    def digest_auth(user, password)
+      @auth = OpenStruct.new({type: :digest, user: user, password: password})
+    end
+
+
   end
 
 
   class TestCase
     include Enumerable
     extend Forwardable
-    attr_reader :uri
+    attr_reader :uri, :auth
     def_delegators :@conditions, :each, :<<, :include?, :empty?
 
-    def initialize(site, uri)
+    def initialize(site, uri, user = nil, password = nil)
       @site, @uri = site, uri
+      @auth = site.auth
       @conditions = []
     end
 
     def uri
-      URI.join @site.base_url, @uri
+      URI.join(@site.base_url, @uri).freeze
+    end
+
+    def basic_auth(user, password)
+      @auth = OpenStruct.new({type: :basic, user: user, password: password})
+    end
+
+    def digest_auth(user, password)
+      @auth = OpenStruct.new({type: :digest, user: user, password: password})
+    end 
+
+    def basic_auth?
+      return @auth && @auth.type == :basic
+    end
+
+    def digest_auth?
+      return @auth && @auth.type == :digest
     end
 
     def eval(response)

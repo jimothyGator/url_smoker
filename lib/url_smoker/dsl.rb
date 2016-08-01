@@ -12,6 +12,14 @@ module UrlSmoker
                 instance_eval &block
             end
 
+            def basic_auth(user, password)
+                @site.basic_auth(user, password)
+            end
+
+            def digest_auth(user, password)
+                @site.digest_auth(user, password)
+            end
+
             def get(url, expected_response_code=nil, &block)
                 builder = TestCaseBuilder.new @site, url, expected_response_code, &block
                 @site << builder.build
@@ -31,6 +39,14 @@ module UrlSmoker
                 if block_given?
                     instance_eval &block
                 end
+            end
+
+            def basic_auth(user, password)
+                @test_case.basic_auth(user, password)
+            end
+
+            def digest_auth(user, password)
+                @test_case.digest_auth(user, password)
             end
 
             def content_type(expected)
