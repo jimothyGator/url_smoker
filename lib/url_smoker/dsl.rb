@@ -2,51 +2,84 @@ require_relative 'model'
 
 require 'uri'
 
+@sites = []
+
 module UrlSmoker
-    class SiteBuilder
-        attr_reader :site
-
-        def initialize(name, base_url, &block)
-            @site = Site.new name, base_url
-            instance_eval &block
-        end
-
-        def get(url, expected_response_code=nil, &block)
-            uri = URI.join @site.base_url, url
-            builder = TestCaseBuilder.new uri, expected_response_code, &block
-            @site << builder.test_case
-        end
-    end
-
-    class TestCaseBuilder
-        attr_reader :test_case
-
-        def initialize(uri, expected_response_code=nil, &block)
-            @test_case = TestCase.new uri
-            if expected_response_code
-                response_code expected_response_code
-            end
-            if block_given?
+    module DSL
+        class SiteBuilder
+            def initialize(name, base_url, &block)
+                @site = Site.new name, base_url
                 instance_eval &block
             end
+
+            def basic_auth(user, password)
+                @site.basic_auth(user, password)
+            end
+
+            def digest_auth(user, password)
+                @site.digest_auth(user, password)
+            end
+
+            def get(url, expected_response_code=nil, &block)
+                builder = TestCaseBuilder.new @site, url, expected_response_code, &block
+                @site << builder.build
+            end
+
+            def build
+                @site
+            end
         end
 
-        def content_type(expected)
-            @test_case << ContentTypeCondition.new(expected)
+        class TestCaseBuilder
+            def initialize(site, uri, expected_response_code=nil, &block)
+                @test_case = TestCase.new site, uri
+                if expected_response_code
+                    response_code expected_response_code
+                end
+                if block_given?
+                    instance_eval &block
+                end
+            end
+
+            def basic_auth(user, password)
+                @test_case.basic_auth(user, password)
+            end
+
+            def digest_auth(user, password)
+                @test_case.digest_auth(user, password)
+            end
+
+            def content_type(expected)
+                @test_case << ContentTypeCondition.new(expected)
+            end
+
+            def response_code(expected)
+                @test_case << ResponseCodeCondition.new(expected)
+            end
+
+            def build
+                @test_case
+            end
+
         end
 
-        def response_code(expected)
-            @test_case << ResponseCodeCondition.new(expected)
+        def self.site(name, base_url, &block)
+            builder = SiteBuilder.new name, base_url, &block
+            site = builder.build
+            if defined? @sites
+                @sites << site
+            end
+
+            site
         end
 
-    end
+        def self.load(filename)
+            @sites ||= []
+            result = self.instance_eval(File.read(filename), filename)
 
-    def self.site(name, base_url, &block)
-        builder = SiteBuilder.new name, base_url, &block
-        builder.site
+            @sites
+        end
     end
 end
 
-def site(name, base_url, &block)
-    UrlSmoker::site(name, base_url, &block)
-end
+
